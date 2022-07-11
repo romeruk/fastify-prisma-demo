@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum USER_STATUS {
+  ACTIVE
+  INACTIVE
+  BANNED
+  DELETED
+}
+
+model Users {
+  user_name      String          @unique
+  first_name     String
+  last_name      String
+  password       String
+  status         USER_STATUS     @default(ACTIVE)
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  favorite_books FavoriteBooks[]
+
+  @@map("users")
+}
+
+model Authors {
+  identity_code String           @unique
+  first_name    String
+  last_name     String
+  created_at    DateTime         @default(now())
+  updated_at    DateTime         @updatedAt
+  books         AuthorsOnBooks[]
+
+  @@map("authors")
+}
+
+model Books {
+  isbn       String           @unique
+  title      String
+  year       Int
+  created_at DateTime         @default(now())
+  updated_at DateTime         @updatedAt
+  authors    AuthorsOnBooks[]
+
+  @@map("books")
+}
+
+model AuthorsOnBooks {
+  book                 Books    @relation(fields: [book_isbn], references: [isbn], onUpdate: Cascade, onDelete: Cascade)
+  book_isbn            String
+  author               Authors  @relation(fields: [author_identity_code], references: [identity_code], onUpdate: Cascade, onDelete: Cascade)
+  author_identity_code String
+  created_at           DateTime @default(now())
+
+  @@id([book_isbn, author_identity_code])
+  @@map("authors_on_books")
+}
+
+model FavoriteBooks {
+  user       Users    @relation(fields: [user_name], references: [user_name])
+  user_name  String
+  book_isbn  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@id([user_name, book_isbn])
+  @@map("favorite_books")
+}
